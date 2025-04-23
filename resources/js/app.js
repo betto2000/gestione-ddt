@@ -6,6 +6,7 @@ import store from './store';
 import axios from 'axios';
 
 axios.defaults.baseURL = '/api';
+axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
 const deviceId = localStorage.getItem('device_id');
 const deviceToken = localStorage.getItem('device_token');
@@ -15,6 +16,12 @@ if (deviceId && deviceToken) {
   axios.defaults.headers.common['Device-ID'] = deviceId;
   axios.defaults.headers.common['Device-Token'] = deviceToken;
 }
+
+axios.interceptors.request.use(config => {
+    // Forza il token CSRF su ogni richiesta
+    config.headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    return config;
+});
 
 // Interceptor per token scaduti o non validi
 axios.interceptors.response.use(

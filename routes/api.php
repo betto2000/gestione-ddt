@@ -18,7 +18,7 @@ Route::prefix('api')->group(function () {
         Route::post('/scan-qr', [DdtController::class, 'getDdtByQrCode']);
         Route::get('/documents/{saleDocId}', [DdtController::class, 'getDocumentDetail']);
         Route::get('/documents/{saleDocId}/details/{line?}', [DdtController::class, 'getDocumentDetail']);
-        Route::put('/documents/update-quantity', [DdtController::class, 'updateQuantity']);
+        Route::post('/documents/update-quantity', [DdtController::class, 'updateQuantity']);
         Route::get('/documents/{saleDocId}/next-detail/{currentLine}', [DdtController::class, 'getNextDetail']);
         Route::get('/documents/{saleDocId}/summary', [DdtController::class, 'getSummary']);
         Route::post('/documents/{saleDocId}/confirm', [DdtController::class, 'confirmDocument']);

@@ -178,7 +178,7 @@ const actions = {
 
     try {
       console.log("Invio richiesta a /documents/update-quantity");
-      const response = await axios.put('/documents/update-quantity', {
+      const response = await axios.post('/documents/update-quantity', {
         sale_doc_id,
         line,
         quantity

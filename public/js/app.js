@@ -48688,6 +48688,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./store */ "./resources/js/store/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_4__);
+var _document$querySelect;
 
 
 
@@ -48695,6 +48696,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 (axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).baseURL = '/api';
+(axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).headers.common['X-CSRF-TOKEN'] = ((_document$querySelect = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect === void 0 ? void 0 : _document$querySelect.content) || '';
 var deviceId = localStorage.getItem('device_id');
 var deviceToken = localStorage.getItem('device_token');
 
@@ -48703,6 +48705,12 @@ if (deviceId && deviceToken) {
   (axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).headers.common['Device-ID'] = deviceId;
   (axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).headers.common['Device-Token'] = deviceToken;
 }
+axios__WEBPACK_IMPORTED_MODULE_4___default().interceptors.request.use(function (config) {
+  var _document$querySelect2;
+  // Forza il token CSRF su ogni richiesta
+  config.headers['X-CSRF-TOKEN'] = ((_document$querySelect2 = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect2 === void 0 ? void 0 : _document$querySelect2.content) || '';
+  return config;
+});
 
 // Interceptor per token scaduti o non validi
 axios__WEBPACK_IMPORTED_MODULE_4___default().interceptors.response.use(function (response) {
@@ -50064,7 +50072,7 @@ var actions = {
             _context4.prev = 5;
             console.log("Invio richiesta a /documents/update-quantity");
             _context4.next = 9;
-            return axios__WEBPACK_IMPORTED_MODULE_0___default().put('/documents/update-quantity', {
+            return axios__WEBPACK_IMPORTED_MODULE_0___default().post('/documents/update-quantity', {
               sale_doc_id: sale_doc_id,
               line: line,
               quantity: quantity

@@ -103,13 +103,15 @@ export default {
         });
 
         if (response.data.authenticated) {
-          // Imposta l'utente nello store Vuex
-          this.$store.commit('auth/SET_USER', response.data.user);
-          this.$store.commit('auth/SET_TOKEN', token);
-          this.$store.commit('auth/SET_DEVICE_ID', deviceId);
-          this.$store.commit('auth/SET_DEVICE_CERTIFIED', true);
+          // Imposta headers per future richieste
+          axios.defaults.headers.common['Device-ID'] = deviceId;
+          axios.defaults.headers.common['Device-Token'] = token;
 
-          // Reindirizza alla pagina principale
+          // Aggiorna lo stato dell'applicazione
+          this.$store.commit('auth/SET_USER', response.data.user);
+          this.$store.commit('auth/SET_AUTHENTICATED', true);
+
+          // Reindirizza
           this.$router.push('/scan');
         }
       } catch (error) {
@@ -120,8 +122,6 @@ export default {
     async login() {
       try {
         const deviceId = this.generateDeviceId();
-
-        delete axios.defaults.headers.common['Authorization'];
 
         const response = await axios.post('/login', {
           email: this.form.email,
@@ -135,17 +135,15 @@ export default {
           localStorage.setItem('device_id', deviceId);
           localStorage.setItem('device_token', response.data.token);
 
-          // Aggiorna lo store Vuex
-          this.$store.commit('auth/SET_USER', response.data.user);
-          this.$store.commit('auth/SET_TOKEN', response.data.token);
-          this.$store.commit('auth/SET_DEVICE_ID', deviceId);
-          this.$store.commit('auth/SET_DEVICE_CERTIFIED', response.data.device_certified);
-
-          // Imposta headers per le future richieste
+          // Imposta headers per future richieste
           axios.defaults.headers.common['Device-ID'] = deviceId;
           axios.defaults.headers.common['Device-Token'] = response.data.token;
 
-          // Reindirizza alla pagina principale
+          // Aggiorna lo stato dell'applicazione
+          this.$store.commit('auth/SET_USER', response.data.user);
+          this.$store.commit('auth/SET_AUTHENTICATED', true);
+
+          // Reindirizza
           this.$router.push('/scan');
         }
       } catch (error) {

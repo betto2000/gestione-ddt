@@ -6,12 +6,10 @@ import store from './store';
 import axios from 'axios';
 
 axios.defaults.baseURL = '/api';
-axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
 const deviceId = localStorage.getItem('device_id');
 const deviceToken = localStorage.getItem('device_token');
 
-// Imposta gli header per l'autenticazione del dispositivo
 if (deviceId && deviceToken) {
   axios.defaults.headers.common['Device-ID'] = deviceId;
   axios.defaults.headers.common['Device-Token'] = deviceToken;

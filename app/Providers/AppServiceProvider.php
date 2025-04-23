@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        \Illuminate\Support\Facades\Route::aliasMiddleware('verified.device', \App\Http\Middleware\VerifyCertifiedDevice::class);
+        \Illuminate\Support\Facades\Route::aliasMiddleware('device.token', \App\Http\Middleware\CheckDeviceToken::class);
         //
     }
 
@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Illuminate\Support\Facades\Route::aliasMiddleware('verified.device', \App\Http\Middleware\VerifyCertifiedDevice::class);
+        \Illuminate\Support\Facades\Route::aliasMiddleware('device.token', \App\Http\Middleware\CheckDeviceToken::class);
 
         // Formatta i timestamp per SQL Server
         if (DB::connection()->getDriverName() === 'sqlsrv') {

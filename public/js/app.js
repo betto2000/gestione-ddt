@@ -2152,13 +2152,15 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
             case 7:
               response = _context.sent;
               if (response.data.authenticated) {
-                // Imposta l'utente nello store Vuex
-                _this.$store.commit('auth/SET_USER', response.data.user);
-                _this.$store.commit('auth/SET_TOKEN', token);
-                _this.$store.commit('auth/SET_DEVICE_ID', deviceId);
-                _this.$store.commit('auth/SET_DEVICE_CERTIFIED', true);
+                // Imposta headers per future richieste
+                axios.defaults.headers.common['Device-ID'] = deviceId;
+                axios.defaults.headers.common['Device-Token'] = token;
 
-                // Reindirizza alla pagina principale
+                // Aggiorna lo stato dell'applicazione
+                _this.$store.commit('auth/SET_USER', response.data.user);
+                _this.$store.commit('auth/SET_AUTHENTICATED', true);
+
+                // Reindirizza
                 _this.$router.push('/scan');
               }
               _context.next = 14;
@@ -2183,46 +2185,43 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
             case 0:
               _context2.prev = 0;
               deviceId = _this2.generateDeviceId();
-              delete axios.defaults.headers.common['Authorization'];
-              _context2.next = 5;
+              _context2.next = 4;
               return axios.post('/login', {
                 email: _this2.form.email,
                 password: _this2.form.password,
                 device_id: deviceId,
                 certify_device: _this2.form.certifyDevice
               });
-            case 5:
+            case 4:
               response = _context2.sent;
               if (response.data.token) {
                 // Salva i dati nel localStorage
                 localStorage.setItem('device_id', deviceId);
                 localStorage.setItem('device_token', response.data.token);
 
-                // Aggiorna lo store Vuex
-                _this2.$store.commit('auth/SET_USER', response.data.user);
-                _this2.$store.commit('auth/SET_TOKEN', response.data.token);
-                _this2.$store.commit('auth/SET_DEVICE_ID', deviceId);
-                _this2.$store.commit('auth/SET_DEVICE_CERTIFIED', response.data.device_certified);
-
-                // Imposta headers per le future richieste
+                // Imposta headers per future richieste
                 axios.defaults.headers.common['Device-ID'] = deviceId;
                 axios.defaults.headers.common['Device-Token'] = response.data.token;
 
-                // Reindirizza alla pagina principale
+                // Aggiorna lo stato dell'applicazione
+                _this2.$store.commit('auth/SET_USER', response.data.user);
+                _this2.$store.commit('auth/SET_AUTHENTICATED', true);
+
+                // Reindirizza
                 _this2.$router.push('/scan');
               }
-              _context2.next = 13;
+              _context2.next = 12;
               break;
-            case 9:
-              _context2.prev = 9;
+            case 8:
+              _context2.prev = 8;
               _context2.t0 = _context2["catch"](0);
               console.error('Errore login:', _context2.t0);
               _this2.error = 'Credenziali non valide';
-            case 13:
+            case 12:
             case "end":
               return _context2.stop();
           }
-        }, _callee2, null, [[0, 9]]);
+        }, _callee2, null, [[0, 8]]);
       }))();
     }
   }
@@ -13993,7 +13992,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_laravel_mix_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_laravel_mix_node_modules_css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.login-container[data-v-06688fcd] {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  padding: 20px;\n  background-color: #f5f5f5;\n}\n.login-card[data-v-06688fcd] {\n  width: 100%;\n  max-width: 400px;\n  padding: 30px;\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n}\n.logo[data-v-06688fcd] {\n  text-align: center;\n  margin-bottom: 20px;\n}\n.logo img[data-v-06688fcd] {\n  max-width: 180px;\n  height: auto;\n}\nh2[data-v-06688fcd] {\n  text-align: center;\n  margin-bottom: 20px;\n  color: #333;\n}\n.form-group[data-v-06688fcd] {\n  margin-bottom: 20px;\n}\n.form-check[data-v-06688fcd] {\n  margin-top: 20px;\n}\n.btn-primary[data-v-06688fcd] {\n  background-color: #3490dc;\n  color: white;\n  border: none;\n  padding: 12px;\n  font-size: 16px;\n  transition: background-color 0.3s;\n}\n.btn-primary[data-v-06688fcd]:hover {\n  background-color: #2779bd;\n}\n.btn-block[data-v-06688fcd] {\n  display: block;\n  width: 100%;\n}\n@media (max-width: 576px) {\n.login-card[data-v-06688fcd] {\n    padding: 20px;\n}\n}\n", "",{"version":3,"sources":["webpack://./resources/js/components/Auth/Login.vue"],"names":[],"mappings":";AAgKA;EACA,aAAA;EACA,uBAAA;EACA,mBAAA;EACA,iBAAA;EACA,aAAA;EACA,yBAAA;AACA;AAEA;EACA,WAAA;EACA,gBAAA;EACA,aAAA;EACA,iBAAA;EACA,kBAAA;EACA,wCAAA;AACA;AAEA;EACA,kBAAA;EACA,mBAAA;AACA;AAEA;EACA,gBAAA;EACA,YAAA;AACA;AAEA;EACA,kBAAA;EACA,mBAAA;EACA,WAAA;AACA;AAEA;EACA,mBAAA;AACA;AAEA;EACA,gBAAA;AACA;AAEA;EACA,yBAAA;EACA,YAAA;EACA,YAAA;EACA,aAAA;EACA,eAAA;EACA,iCAAA;AACA;AAEA;EACA,yBAAA;AACA;AAEA;EACA,cAAA;EACA,WAAA;AACA;AAEA;AACA;IACA,aAAA;AACA;AACA","sourcesContent":["<template>\n  <div class=\"login-container\">\n    <div class=\"login-card\">\n      <div class=\"logo\">\n        <img src=\"/img/logo.png\" alt=\"B&C Prodotti Chimici\" />\n      </div>\n\n      <h2>Accesso</h2>\n\n      <div v-if=\"error\" class=\"alert alert-danger\">\n        {{ error }}\n      </div>\n\n      <form @submit.prevent=\"login\">\n        <div class=\"form-group\">\n          <label for=\"email\">Email</label>\n          <input\n            type=\"email\"\n            id=\"email\"\n            v-model=\"form.email\"\n            class=\"form-control\"\n            required\n          />\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"password\">Password</label>\n          <input\n            type=\"password\"\n            id=\"password\"\n            v-model=\"form.password\"\n            class=\"form-control\"\n            required\n          />\n        </div>\n\n        <div class=\"form-group form-check\">\n          <input\n            type=\"checkbox\"\n            id=\"certify\"\n            v-model=\"form.certifyDevice\"\n            class=\"form-check-input\"\n          />\n          <label class=\"form-check-label\" for=\"certify\">\n            Certifica questo dispositivo come sicuro\n          </label>\n        </div>\n\n        <button type=\"submit\" class=\"btn btn-primary btn-block\" :disabled=\"loading\">\n          {{ loading ? 'Accesso in corso...' : 'Accedi' }}\n        </button>\n      </form>\n    </div>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() {\n    return {\n      form: {\n        email: '',\n        password: '',\n        certifyDevice: false\n      }\n    };\n  },\n\n  created() {\n    // Controlla se il dispositivo è già certificato\n    this.checkDeviceCertification();\n  },\n\n  methods: {\n    generateDeviceId() {\n      // Genera un ID dispositivo univoco o recuperalo se già esiste\n      let deviceId = localStorage.getItem('device_id');\n\n      if (!deviceId) {\n        // Crea un identificatore unico\n        deviceId = 'device_' + Math.random().toString(36).substring(2, 15);\n        localStorage.setItem('device_id', deviceId);\n      }\n\n      return deviceId;\n    },\n\n    async checkDeviceCertification() {\n      const deviceId = localStorage.getItem('device_id');\n      const token = localStorage.getItem('device_token');\n\n      if (!deviceId || !token) {\n        return;\n      }\n\n      try {\n        // Controlla se il dispositivo è già certificato\n        const response = await axios.get('/check-device', {\n          headers: {\n            'Device-ID': deviceId,\n            'Device-Token': token\n          }\n        });\n\n        if (response.data.authenticated) {\n          // Imposta l'utente nello store Vuex\n          this.$store.commit('auth/SET_USER', response.data.user);\n          this.$store.commit('auth/SET_TOKEN', token);\n          this.$store.commit('auth/SET_DEVICE_ID', deviceId);\n          this.$store.commit('auth/SET_DEVICE_CERTIFIED', true);\n\n          // Reindirizza alla pagina principale\n          this.$router.push('/scan');\n        }\n      } catch (error) {\n        console.error('Errore nel controllo del dispositivo:', error);\n      }\n    },\n\n    async login() {\n      try {\n        const deviceId = this.generateDeviceId();\n\n        delete axios.defaults.headers.common['Authorization'];\n\n        const response = await axios.post('/login', {\n          email: this.form.email,\n          password: this.form.password,\n          device_id: deviceId,\n          certify_device: this.form.certifyDevice\n        });\n\n        if (response.data.token) {\n          // Salva i dati nel localStorage\n          localStorage.setItem('device_id', deviceId);\n          localStorage.setItem('device_token', response.data.token);\n\n          // Aggiorna lo store Vuex\n          this.$store.commit('auth/SET_USER', response.data.user);\n          this.$store.commit('auth/SET_TOKEN', response.data.token);\n          this.$store.commit('auth/SET_DEVICE_ID', deviceId);\n          this.$store.commit('auth/SET_DEVICE_CERTIFIED', response.data.device_certified);\n\n          // Imposta headers per le future richieste\n          axios.defaults.headers.common['Device-ID'] = deviceId;\n          axios.defaults.headers.common['Device-Token'] = response.data.token;\n\n          // Reindirizza alla pagina principale\n          this.$router.push('/scan');\n        }\n      } catch (error) {\n        console.error('Errore login:', error);\n        this.error = 'Credenziali non valide';\n      }\n    }\n  }\n};\n</script>\n\n<style scoped>\n.login-container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  padding: 20px;\n  background-color: #f5f5f5;\n}\n\n.login-card {\n  width: 100%;\n  max-width: 400px;\n  padding: 30px;\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n}\n\n.logo {\n  text-align: center;\n  margin-bottom: 20px;\n}\n\n.logo img {\n  max-width: 180px;\n  height: auto;\n}\n\nh2 {\n  text-align: center;\n  margin-bottom: 20px;\n  color: #333;\n}\n\n.form-group {\n  margin-bottom: 20px;\n}\n\n.form-check {\n  margin-top: 20px;\n}\n\n.btn-primary {\n  background-color: #3490dc;\n  color: white;\n  border: none;\n  padding: 12px;\n  font-size: 16px;\n  transition: background-color 0.3s;\n}\n\n.btn-primary:hover {\n  background-color: #2779bd;\n}\n\n.btn-block {\n  display: block;\n  width: 100%;\n}\n\n@media (max-width: 576px) {\n  .login-card {\n    padding: 20px;\n  }\n}\n</style>\n"],"sourceRoot":""}]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.login-container[data-v-06688fcd] {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  padding: 20px;\n  background-color: #f5f5f5;\n}\n.login-card[data-v-06688fcd] {\n  width: 100%;\n  max-width: 400px;\n  padding: 30px;\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n}\n.logo[data-v-06688fcd] {\n  text-align: center;\n  margin-bottom: 20px;\n}\n.logo img[data-v-06688fcd] {\n  max-width: 180px;\n  height: auto;\n}\nh2[data-v-06688fcd] {\n  text-align: center;\n  margin-bottom: 20px;\n  color: #333;\n}\n.form-group[data-v-06688fcd] {\n  margin-bottom: 20px;\n}\n.form-check[data-v-06688fcd] {\n  margin-top: 20px;\n}\n.btn-primary[data-v-06688fcd] {\n  background-color: #3490dc;\n  color: white;\n  border: none;\n  padding: 12px;\n  font-size: 16px;\n  transition: background-color 0.3s;\n}\n.btn-primary[data-v-06688fcd]:hover {\n  background-color: #2779bd;\n}\n.btn-block[data-v-06688fcd] {\n  display: block;\n  width: 100%;\n}\n@media (max-width: 576px) {\n.login-card[data-v-06688fcd] {\n    padding: 20px;\n}\n}\n", "",{"version":3,"sources":["webpack://./resources/js/components/Auth/Login.vue"],"names":[],"mappings":";AA8JA;EACA,aAAA;EACA,uBAAA;EACA,mBAAA;EACA,iBAAA;EACA,aAAA;EACA,yBAAA;AACA;AAEA;EACA,WAAA;EACA,gBAAA;EACA,aAAA;EACA,iBAAA;EACA,kBAAA;EACA,wCAAA;AACA;AAEA;EACA,kBAAA;EACA,mBAAA;AACA;AAEA;EACA,gBAAA;EACA,YAAA;AACA;AAEA;EACA,kBAAA;EACA,mBAAA;EACA,WAAA;AACA;AAEA;EACA,mBAAA;AACA;AAEA;EACA,gBAAA;AACA;AAEA;EACA,yBAAA;EACA,YAAA;EACA,YAAA;EACA,aAAA;EACA,eAAA;EACA,iCAAA;AACA;AAEA;EACA,yBAAA;AACA;AAEA;EACA,cAAA;EACA,WAAA;AACA;AAEA;AACA;IACA,aAAA;AACA;AACA","sourcesContent":["<template>\n  <div class=\"login-container\">\n    <div class=\"login-card\">\n      <div class=\"logo\">\n        <img src=\"/img/logo.png\" alt=\"B&C Prodotti Chimici\" />\n      </div>\n\n      <h2>Accesso</h2>\n\n      <div v-if=\"error\" class=\"alert alert-danger\">\n        {{ error }}\n      </div>\n\n      <form @submit.prevent=\"login\">\n        <div class=\"form-group\">\n          <label for=\"email\">Email</label>\n          <input\n            type=\"email\"\n            id=\"email\"\n            v-model=\"form.email\"\n            class=\"form-control\"\n            required\n          />\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"password\">Password</label>\n          <input\n            type=\"password\"\n            id=\"password\"\n            v-model=\"form.password\"\n            class=\"form-control\"\n            required\n          />\n        </div>\n\n        <div class=\"form-group form-check\">\n          <input\n            type=\"checkbox\"\n            id=\"certify\"\n            v-model=\"form.certifyDevice\"\n            class=\"form-check-input\"\n          />\n          <label class=\"form-check-label\" for=\"certify\">\n            Certifica questo dispositivo come sicuro\n          </label>\n        </div>\n\n        <button type=\"submit\" class=\"btn btn-primary btn-block\" :disabled=\"loading\">\n          {{ loading ? 'Accesso in corso...' : 'Accedi' }}\n        </button>\n      </form>\n    </div>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() {\n    return {\n      form: {\n        email: '',\n        password: '',\n        certifyDevice: false\n      }\n    };\n  },\n\n  created() {\n    // Controlla se il dispositivo è già certificato\n    this.checkDeviceCertification();\n  },\n\n  methods: {\n    generateDeviceId() {\n      // Genera un ID dispositivo univoco o recuperalo se già esiste\n      let deviceId = localStorage.getItem('device_id');\n\n      if (!deviceId) {\n        // Crea un identificatore unico\n        deviceId = 'device_' + Math.random().toString(36).substring(2, 15);\n        localStorage.setItem('device_id', deviceId);\n      }\n\n      return deviceId;\n    },\n\n    async checkDeviceCertification() {\n      const deviceId = localStorage.getItem('device_id');\n      const token = localStorage.getItem('device_token');\n\n      if (!deviceId || !token) {\n        return;\n      }\n\n      try {\n        // Controlla se il dispositivo è già certificato\n        const response = await axios.get('/check-device', {\n          headers: {\n            'Device-ID': deviceId,\n            'Device-Token': token\n          }\n        });\n\n        if (response.data.authenticated) {\n          // Imposta headers per future richieste\n          axios.defaults.headers.common['Device-ID'] = deviceId;\n          axios.defaults.headers.common['Device-Token'] = token;\n\n          // Aggiorna lo stato dell'applicazione\n          this.$store.commit('auth/SET_USER', response.data.user);\n          this.$store.commit('auth/SET_AUTHENTICATED', true);\n\n          // Reindirizza\n          this.$router.push('/scan');\n        }\n      } catch (error) {\n        console.error('Errore nel controllo del dispositivo:', error);\n      }\n    },\n\n    async login() {\n      try {\n        const deviceId = this.generateDeviceId();\n\n        const response = await axios.post('/login', {\n          email: this.form.email,\n          password: this.form.password,\n          device_id: deviceId,\n          certify_device: this.form.certifyDevice\n        });\n\n        if (response.data.token) {\n          // Salva i dati nel localStorage\n          localStorage.setItem('device_id', deviceId);\n          localStorage.setItem('device_token', response.data.token);\n\n          // Imposta headers per future richieste\n          axios.defaults.headers.common['Device-ID'] = deviceId;\n          axios.defaults.headers.common['Device-Token'] = response.data.token;\n\n          // Aggiorna lo stato dell'applicazione\n          this.$store.commit('auth/SET_USER', response.data.user);\n          this.$store.commit('auth/SET_AUTHENTICATED', true);\n\n          // Reindirizza\n          this.$router.push('/scan');\n        }\n      } catch (error) {\n        console.error('Errore login:', error);\n        this.error = 'Credenziali non valide';\n      }\n    }\n  }\n};\n</script>\n\n<style scoped>\n.login-container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  padding: 20px;\n  background-color: #f5f5f5;\n}\n\n.login-card {\n  width: 100%;\n  max-width: 400px;\n  padding: 30px;\n  background: white;\n  border-radius: 8px;\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n}\n\n.logo {\n  text-align: center;\n  margin-bottom: 20px;\n}\n\n.logo img {\n  max-width: 180px;\n  height: auto;\n}\n\nh2 {\n  text-align: center;\n  margin-bottom: 20px;\n  color: #333;\n}\n\n.form-group {\n  margin-bottom: 20px;\n}\n\n.form-check {\n  margin-top: 20px;\n}\n\n.btn-primary {\n  background-color: #3490dc;\n  color: white;\n  border: none;\n  padding: 12px;\n  font-size: 16px;\n  transition: background-color 0.3s;\n}\n\n.btn-primary:hover {\n  background-color: #2779bd;\n}\n\n.btn-block {\n  display: block;\n  width: 100%;\n}\n\n@media (max-width: 576px) {\n  .login-card {\n    padding: 20px;\n  }\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -48688,7 +48687,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./store */ "./resources/js/store/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_4__);
-var _document$querySelect;
 
 
 
@@ -48696,19 +48694,16 @@ var _document$querySelect;
 
 
 (axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).baseURL = '/api';
-(axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).headers.common['X-CSRF-TOKEN'] = ((_document$querySelect = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect === void 0 ? void 0 : _document$querySelect.content) || '';
 var deviceId = localStorage.getItem('device_id');
 var deviceToken = localStorage.getItem('device_token');
-
-// Imposta gli header per l'autenticazione del dispositivo
 if (deviceId && deviceToken) {
   (axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).headers.common['Device-ID'] = deviceId;
   (axios__WEBPACK_IMPORTED_MODULE_4___default().defaults).headers.common['Device-Token'] = deviceToken;
 }
 axios__WEBPACK_IMPORTED_MODULE_4___default().interceptors.request.use(function (config) {
-  var _document$querySelect2;
+  var _document$querySelect;
   // Forza il token CSRF su ogni richiesta
-  config.headers['X-CSRF-TOKEN'] = ((_document$querySelect2 = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect2 === void 0 ? void 0 : _document$querySelect2.content) || '';
+  config.headers['X-CSRF-TOKEN'] = ((_document$querySelect = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect === void 0 ? void 0 : _document$querySelect.content) || '';
   return config;
 });
 

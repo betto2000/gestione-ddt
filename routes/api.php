@@ -12,18 +12,19 @@ Route::prefix('api')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/check-device', [AuthController::class, 'checkDevice']);
 
-    // Route accessibili da dispositivi certificati
-    Route::middleware('verified.device')->group(function () {
-        // DDT e dettagli
+    // Rotte protette da autenticazione (Sanctum o dispositivo)
+    Route::middleware(['device.token'])->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+
+        // API DDT
         Route::post('/scan-qr', [DdtController::class, 'getDdtByQrCode']);
         Route::get('/documents/{saleDocId}', [DdtController::class, 'getDocumentDetail']);
         Route::get('/documents/{saleDocId}/details/{line?}', [DdtController::class, 'getDocumentDetail']);
-        Route::post('/documents/update-quantity', [DdtController::class, 'updateQuantity']);
         Route::get('/documents/{saleDocId}/next-detail/{currentLine}', [DdtController::class, 'getNextDetail']);
+        Route::post('/documents/update-quantity', [DdtController::class, 'updateQuantity']);
         Route::get('/documents/{saleDocId}/summary', [DdtController::class, 'getSummary']);
         Route::post('/documents/{saleDocId}/confirm', [DdtController::class, 'confirmDocument']);
 
-        // API di supporto
         Route::get('/document-types', [ApiController::class, 'getDocumentTypes']);
         Route::get('/customers', [ApiController::class, 'getCustomers']);
         Route::post('/logout', [AuthController::class, 'logout']);

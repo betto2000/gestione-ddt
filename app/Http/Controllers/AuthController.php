@@ -6,9 +6,8 @@ use App\Models\User;
 use App\Models\DeviceToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -19,40 +18,52 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Tenta il login normale con email/password
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $deviceId = $request->device_id;
-            $certify = $request->certify_device === true;
+            $certifyDevice = $request->certify_device === true;
 
             // Genera un token sicuro
             $token = Str::random(60);
 
-            // Cerca se questo dispositivo è già associato all'utente
-            $deviceToken = DeviceToken::where('user_id', $user->id)
-                ->where('device_id', $deviceId)
-                ->first();
+            // Verifica se il dispositivo esiste già
+            $query = "SELECT id FROM device_tokens WHERE user_id = ? AND device_id = ?";
+            $deviceExists = DB::select($query, [$user->id, $deviceId]);
 
-                if ($deviceToken) {
+            if (count($deviceExists) > 0) {
+                // Aggiorna dispositivo esistente
+                $deviceId = $deviceExists[0]->id;
 
-                    // Aggiorna direttamente con una query SQL raw
-                    DB::update('UPDATE device_tokens SET token = ?, certified_at = GETDATE() WHERE id = ?', [
-                        $token,
-                        $deviceToken->id
-                    ]);
-                } else {
+                $updateQuery = "UPDATE device_tokens SET
+                    token = ?,
+                    certified_at = GETDATE(),
+                    ip_address = ?,
+                    updated_at = GETDATE()
+                    WHERE id = ?";
 
-                    DB::insert('INSERT INTO device_tokens (user_id, device_id, token, certified_at, created_at, updated_at) VALUES (?, ?, ?, GETDATE(), GETDATE(), GETDATE())', [
-                        $user->id,
-                        $deviceId,
-                        $token
-                    ]);
-                }
+                DB::update($updateQuery, [
+                    $token,
+                    $request->ip(),
+                    $deviceId
+                ]);
+            } else {
+                // Inserisci nuovo dispositivo
+                $insertQuery = "INSERT INTO device_tokens
+                    (user_id, device_id, token, certified_at, ip_address, created_at, updated_at)
+                    VALUES (?, ?, ?, GETDATE(), ?, GETDATE(), GETDATE())";
+
+                DB::insert($insertQuery, [
+                    $user->id,
+                    $deviceId,
+                    $token,
+                    $request->ip()
+                ]);
+            }
 
             return response()->json([
                 'user' => $user,
                 'token' => $token,
-                'device_certified' => $certify || ($deviceToken && $deviceToken->certified_at)
+                'device_certified' => $certifyDevice
             ]);
         }
 
@@ -61,47 +72,41 @@ class AuthController extends Controller
 
     public function checkDevice(Request $request)
     {
-        $deviceId = $request->header('Device-ID') ?? $request->cookie('device_id');
-        $token = $request->header('Device-Token') ?? $request->cookie('device_token');
+        $deviceId = $request->header('Device-ID');
+        $token = $request->header('Device-Token');
 
         if (!$deviceId || !$token) {
             return response()->json(['authenticated' => false]);
         }
 
-        $deviceToken = DeviceToken::where('device_id', $deviceId)
-            ->where('token', $token)
-            ->whereNotNull('certified_at')
-            ->first();
+        // Verifica il dispositivo con query diretta
+        $query = "SELECT u.id, u.name, u.email
+                  FROM device_tokens d
+                  JOIN users u ON d.user_id = u.id
+                  WHERE d.device_id = ?
+                  AND d.token = ?
+                  AND d.certified_at IS NOT NULL";
 
-        if (!$deviceToken) {
+        $result = DB::select($query, [$deviceId, $token]);
+
+        if (count($result) === 0) {
             return response()->json(['authenticated' => false]);
         }
 
-        $user = User::find($deviceToken->user_id);
-
-        if (!$user) {
-            return response()->json(['authenticated' => false]);
-        }
+        $user = $result[0];
 
         return response()->json([
             'authenticated' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email
-            ]
+            'user' => $user
         ]);
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
-
-        if ($request->device_id) {
-            // Opzionale: rimuovere solo il token attuale dal dispositivo senza decertificarlo
-            DeviceToken::where('device_id', $request->device_id)
-                ->where('user_id', Auth::id())
-                ->update(['token' => null]);
+        // Elimina il token del dispositivo se fornito
+        $deviceId = $request->header('Device-ID');
+        if ($deviceId) {
+            DB::delete('DELETE FROM device_tokens WHERE device_id = ?', [$deviceId]);
         }
 
         return response()->json(['message' => 'Logout effettuato con successo']);

@@ -171,8 +171,8 @@ const actions = {
   /**
    * Aggiorna la quantità di un dettaglio
    */
-  async updateQuantity({ commit }, { sale_doc_id, line, quantity }) {
-    console.log("Chiamata updateQuantity con:", { sale_doc_id, line, quantity });
+  async updateQuantity({ commit }, { sale_doc_id, line, item, quantity }) {
+    console.log("Chiamata updateQuantity con:", { sale_doc_id, line,item, quantity });
     commit('SET_LOADING', true);
     commit('CLEAR_ERROR');
 
@@ -181,6 +181,7 @@ const actions = {
       const response = await axios.post('/documents/update-quantity', {
         sale_doc_id,
         line,
+        item,
         quantity
       });
       console.log("Risposta ricevuta da /documents/update-quantity:", response.data);
@@ -283,24 +284,33 @@ const actions = {
     commit('CLEAR_ERROR');
 
     try {
-      console.log(`Invio richiesta a /documents/${saleDocId}/confirm`);
-      const response = await axios.post(`/documents/${saleDocId}/confirm`);
-      console.log(`Risposta ricevuta da /documents/${saleDocId}/confirm:`, response.data);
+        const response = await axios.post(`/documents/${saleDocId}/confirm`);
 
-      if (response.data) {
-        return { success: true };
-      }
+        console.log(`Risposta ricevuta da /documents/${saleDocId}/confirm:`, response.data);
 
-      commit('SET_ERROR', 'Conferma fallita');
-      return { success: false };
+        if (response.data) {
+        return {
+            success: true,
+            message: response.data.message || 'Documento confermato con successo'
+        };
+        }
+
+        commit('SET_ERROR', 'Conferma fallita');
+        return {
+        success: false,
+        message: response.data?.message || 'Conferma fallita'
+        };
     } catch (error) {
-      console.error("Errore in confirmDocument:", error);
-      console.error("Risposta errore:", error.response?.data);
+        console.error("Errore in confirmDocument:", error);
+        console.error("Risposta errore:", error.response?.data);
 
-      commit('SET_ERROR', 'Errore durante la conferma del documento');
-      return { success: false };
+        commit('SET_ERROR', 'Errore durante la conferma del documento');
+        return {
+        success: false,
+        message: error.response?.data?.message || 'Errore durante la conferma'
+        };
     } finally {
-      commit('SET_LOADING', false);
+        commit('SET_LOADING', false);
     }
   }
 };

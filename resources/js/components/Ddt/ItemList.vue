@@ -40,24 +40,24 @@
       </div>
 
       <div class="imballi-section">
-        <div class="section-title">IMBALLI</div>
+      <div class="section-title">IMBALLI</div>
 
-        <!-- Select per il tipo di imballo -->
-        <div class="select-container">
-          <select v-model="selectedPackageType" class="form-control">
-            <option value="" disabled selected>Seleziona tipo</option>
-            <option value="CUBO">CUBO A RENDERE</option>
-            <option value="FUSTO">FUSTO LT 200</option>
-            <option value="TANICA">TANICA 25 KG</option>
-          </select>
-        </div>
+      <!-- Select dinamica per il tipo di imballo -->
+      <div class="select-container">
+        <select v-model="selectedPackageType" class="form-control" :disabled="loadingPackages">
+          <option value="" disabled selected>{{ loadingPackages ? 'Caricamento...' : 'Seleziona tipo' }}</option>
+          <option v-for="pkg in packages" :key="pkg.Item" :value="pkg.Item">
+            {{ pkg.Description }}
+          </option>
+        </select>
+      </div>
 
         <!-- Lista degli imballi selezionati -->
         <div class="selected-package" v-if="selectedPackageType">
-          <div class="package-item">
-            <div class="package-name">{{ getPackageName(selectedPackageType) }}</div>
-            <div class="package-check" v-if="packageSelected">✓</div>
-          </div>
+            <div class="package-item">
+                <div class="package-name">{{ getPackageName(selectedPackageType) }}</div>
+                <div class="package-check" v-if="packageSelected">✓</div>
+            </div>
         </div>
 
         <!-- Sezione quantità -->
@@ -75,26 +75,26 @@
       </div>
 
       <!-- Lista degli imballi aggiunti -->
-      <div class="packages-list" v-if="packages.length > 0">
+    <div class="packages-list" v-if="packages.length > 0">
         <div class="section-title">IMBALLI AGGIUNTI</div>
         <div class="package-list-items">
-          <div v-for="(pkg, index) in packages" :key="index" class="package-list-item">
+            <div v-for="(pkg, index) in addedPackages" :key="index" class="package-list-item">
             <div class="package-details">
-              <div class="package-type">{{ getPackageName(pkg.type) }}</div>
-              <div class="package-qty">{{ pkg.quantity }} pz</div>
+                <div class="package-type">{{ getPackageName(pkg.type) }}</div>
+                <div class="package-qty">{{ pkg.quantity }} pz</div>
             </div>
             <button @click="removePackage(index)" class="remove-btn">&times;</button>
-          </div>
+            </div>
         </div>
-      </div>
+    </div>
 
       <!-- Pulsanti azione -->
       <div class="action-buttons">
         <button @click="addPackage" class="btn-add" :disabled="!canAddPackage">
           AGGIUNGI
         </button>
-        <button @click="saveAndContinue" class="btn-next">
-          AVANTI
+        <button @click="saveAndContinue" class="btn-next" :disabled="localLoading">
+            {{ localLoading ? 'SALVATAGGIO...' : 'AVANTI' }}
         </button>
       </div>
     </template>
@@ -116,6 +116,8 @@ export default {
       selectedPackageType: '',
       packageQuantity: 0,
       packages: [],
+      addedPackages: [],
+      loadingPackages: false,
       saleDocId: null,
       localLoading: false,
       error: null,
@@ -191,16 +193,35 @@ export default {
         this.error = "Errore nel caricamento del documento";
       } finally {
         this.localLoading = false;
+        this.loadPackages();
       }
     },
 
-    getPackageName(type) {
-      switch(type) {
-        case 'CUBO': return 'CUBO A RENDERE';
-        case 'FUSTO': return 'FUSTO LT 200';
-        case 'TANICA': return 'TANICA 25 KG';
-        default: return type;
+    async loadPackages() {
+      this.loadingPackages = true;
+
+      try {
+        const response = await axios.get('/packages');
+
+        if (response.data.success) {
+          console.log("Imballi caricati:", response.data.packages);
+          this.packages = response.data.packages;
+        } else {
+          console.error("Errore nel caricamento degli imballi:", response.data.message);
+          this.error = "Errore nel caricamento degli imballi";
+        }
+      } catch (err) {
+        console.error("Eccezione nel caricamento degli imballi:", err);
+        this.error = "Errore nella comunicazione con il server";
+      } finally {
+        this.loadingPackages = false;
       }
+    },
+
+    getPackageName(packageId) {
+      // Cerca l'imballo nell'array e restituisce la descrizione
+      const pkg = this.packages.find(p => p.Item === packageId);
+      return pkg ? pkg.Description : packageId;
     },
 
     increaseQty() {
@@ -214,45 +235,60 @@ export default {
     },
 
     addPackage() {
-      if (this.canAddPackage) {
-        // Aggiungi il pacchetto alla lista
-        this.packages.push({
-          type: this.selectedPackageType,
-          quantity: this.packageQuantity
-        });
+        if (this.canAddPackage) {
+            // Aggiungi il pacchetto alla lista
+            this.addedPackages.push({
+            type: this.selectedPackageType,
+            quantity: this.packageQuantity
+            });
 
-        console.log("Imballo aggiunto:", {
-          type: this.selectedPackageType,
-          quantity: this.packageQuantity
-        });
+            console.log("Imballo aggiunto:", {
+            type: this.selectedPackageType,
+            quantity: this.packageQuantity
+            });
 
-        // Reset dei campi
-        this.selectedPackageType = '';
-        this.packageQuantity = 0;
-        this.packageSelected = false;
-      }
+            // Reset dei campi
+            this.selectedPackageType = '';
+            this.packageQuantity = 0;
+            this.packageSelected = false;
+        }
     },
 
     removePackage(index) {
-      this.packages.splice(index, 1);
-      console.log("Imballo rimosso, indice:", index);
+        this.addedPackages.splice(index, 1);
+        console.log("Imballo rimosso, indice:", index);
     },
 
-    saveAndContinue() {
-      if (!this.canProceed) {
-        this.error = "Aggiungi almeno un imballo prima di continuare";
-        return;
-      }
+    async saveAndContinue() {
 
-      console.log("Continuazione al riepilogo con imballi:", this.packages);
+    this.localLoading = true;
 
-      // Qui potresti salvare gli imballi al backend se necessario
+    try {
+        // Salva gli imballi al database
+        console.log("Salvataggio imballi:", this.addedPackages);
 
-      // Navigazione al riepilogo
-      this.$router.push({
-        name: 'document-summary',
-        params: { saleDocId: this.saleDocId }
-      });
+        const response = await axios.post(`/documents/${this.saleDocId}/packages`, {
+        packages: this.addedPackages
+        });
+
+        if (response.data.success) {
+        console.log("Imballi salvati con successo");
+
+        // Navigazione al riepilogo
+        this.$router.push({
+            name: 'document-summary',
+            params: { saleDocId: this.saleDocId }
+        });
+        } else {
+        console.error("Errore nel salvataggio degli imballi:", response.data.message);
+        this.error = response.data.message || "Errore nel salvataggio degli imballi";
+        }
+    } catch (err) {
+        console.error("Eccezione nel salvataggio degli imballi:", err);
+        this.error = "Errore nella comunicazione con il server";
+    } finally {
+        this.localLoading = false;
+    }
     },
 
     goToScan() {

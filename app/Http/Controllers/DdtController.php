@@ -67,23 +67,40 @@ class DdtController extends Controller
             'sale_doc_id' => 'required',
             'line' => 'required|integer',
             'quantity' => 'required|numeric|min:0',
+            'item' => 'required|string',  // Aggiungiamo l'item dalla riga di dettaglio
         ]);
 
-        Log::info("Tentativo di aggiornamento quantità", $validated);
+        \Log::info("Registrazione quantità", $validated);
 
-        $updated = $this->ddtService->updateQuantity(
-            $validated['sale_doc_id'],
-            $validated['line'],
-            $validated['quantity']
-        );
+        // Elimina eventuali imballi esistenti per questo documento
+        DB::delete('DELETE FROM DEB_BA4_RigheAutisti WHERE SaleDocId = ? AND Line = ?', [$validated['sale_doc_id'],$validated['line']]);
 
-        if (!$updated) {
-            Log::warning("Aggiornamento quantità fallito", $validated);
-            return response()->json(['message' => 'Aggiornamento fallito'], 400);
+        try {
+
+            DB::insert(
+                'INSERT INTO DEB_BA4_RigheAutisti (SaleDocId, Line, Item, Qty, Aggiornato) VALUES (?, ?, ?, ?, ?)',
+                [
+                    $validated['sale_doc_id'],
+                    $validated['line'],
+                    $validated['item'],
+                    $validated['quantity'],
+                    '0'
+                ]
+            );
+
+            \Log::info("Quantità registrata con successo");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quantità registrata con successo'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Errore nella registrazione della quantità: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Errore nella registrazione della quantità'
+            ], 500);
         }
-
-        Log::info("Quantità aggiornata con successo", $validated);
-        return response()->json(['message' => 'Quantità aggiornata con successo']);
     }
 
     /**
@@ -138,5 +155,125 @@ class DdtController extends Controller
 
         Log::info("Riepilogo documento trovato: $saleDocId, Dettagli: " . count($document['details']));
         return response()->json($document);
+    }
+
+    /**
+     * Salva gli imballi associati al documento
+     */
+    public function savePackages(Request $request, $saleDocId)
+    {
+        $packages = $request->validate([
+            'packages' => 'required|array',
+            'packages.*.type' => 'required|string',
+            'packages.*.quantity' => 'required|numeric|min:0'
+        ]);
+
+        \Log::info("Salvataggio imballi per documento: $saleDocId", ['count' => count($request->packages)]);
+
+        try {
+            // Elimina eventuali imballi esistenti per questo documento
+            DB::delete('DELETE FROM DEB_BA4_RigheAutisti WHERE SaleDocId = ? AND Line = 0', [$saleDocId]);
+
+            // Inserisci i nuovi imballi
+            foreach ($request->packages as $package) {
+
+                DB::insert(
+                    'INSERT INTO DEB_BA4_RigheAutisti (SaleDocId, Line, Item, Qty,Aggiornato) VALUES (?, ?, ?, ?, ?)',
+                    [
+                        $saleDocId,
+                        0, // Line sempre 0 come richiesto
+                        $package['type'],
+                        $package['quantity'],
+                        '0'
+                    ]
+                );
+            }
+
+            \Log::info("Imballi salvati con successo");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imballi salvati con successo'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Errore nel salvataggio degli imballi: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Errore nel salvataggio degli imballi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Ottiene le righe registrate nella tabella DEB_BA4_RigheAutisti
+     */
+    public function getRegisteredRows($saleDocId)
+    {
+        \Log::info("Richiesta righe registrate per documento: $saleDocId");
+
+        try {
+            // Ottieni le righe dalla tabella DEB_BA4_RigheAutisti
+            $rows = DB::select("
+                SELECT r.SaleDocId, r.Line, r.Item, r.Qty,
+                    CASE
+                        WHEN r.Line > 0 THEN d.Description
+                        WHEN r.Line = 0 THEN i.Description
+                        ELSE NULL
+                    END as Description,
+                    CASE
+                       WHEN r.Line > 0 THEN d.UoM
+                       WHEN r.Line = 0 THEN i.BaseUoM
+                       ELSE NULL
+                    END as UoM
+                FROM DEB_BA4_RigheAutisti r
+                LEFT JOIN MA_SaleDocDetail d ON r.SaleDocId = d.SaleDocId AND r.Line = d.Line
+                LEFT JOIN MA_Items i ON r.Item = i.Item
+                WHERE r.SaleDocId = ?
+                ORDER BY r.Line, r.Item
+            ", [$saleDocId]);
+
+            \Log::info("Righe registrate trovate: " . count($rows));
+
+            return response()->json([
+                'success' => true,
+                'rows' => $rows
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Errore nel recupero delle righe registrate: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Errore nel recupero delle righe registrate'
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancella le righe registrate per un documento
+     */
+    public function deleteRegisteredRows($saleDocId)
+    {
+        \Log::info("Richiesta di cancellazione righe per documento: $saleDocId");
+
+        try {
+            // Elimina tutte le righe per questo SaleDocId
+            $count = DB::delete('DELETE FROM DEB_BA4_RigheAutisti WHERE SaleDocId = ?', [$saleDocId]);
+
+            \Log::info("Righe cancellate: $count");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Righe cancellate con successo',
+                'count' => $count
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Errore nella cancellazione delle righe: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Errore nella cancellazione delle righe'
+            ], 500);
+        }
     }
 }

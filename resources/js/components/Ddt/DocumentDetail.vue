@@ -228,6 +228,7 @@ export default {
         const updateResult = await this.updateQuantity({
           sale_doc_id: this.saleDocId,
           line: this.detail.Line,
+          item: this.detail.Item,
           quantity: this.quantity
         });
 

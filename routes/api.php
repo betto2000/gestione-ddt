@@ -24,9 +24,13 @@ Route::prefix('api')->group(function () {
         Route::post('/documents/update-quantity', [DdtController::class, 'updateQuantity']);
         Route::get('/documents/{saleDocId}/summary', [DdtController::class, 'getSummary']);
         Route::post('/documents/{saleDocId}/confirm', [DdtController::class, 'confirmDocument']);
+        Route::post('/documents/{saleDocId}/packages', [DdtController::class, 'savePackages']);
+        Route::get('/documents/{saleDocId}/registered-rows', [DdtController::class, 'getRegisteredRows']);
+        Route::delete('/documents/{saleDocId}/registered-rows', [DdtController::class, 'deleteRegisteredRows']);
 
         Route::get('/document-types', [ApiController::class, 'getDocumentTypes']);
         Route::get('/customers', [ApiController::class, 'getCustomers']);
+        Route::get('/packages', [ApiController::class, 'getPackages']);
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });

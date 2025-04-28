@@ -116,35 +116,6 @@ class DdtService
     }
 
     /**
-     * Aggiorna la quantità di un dettaglio
-     *
-     * @param string $saleDocId
-     * @param int $line
-     * @param float $quantity
-     * @return bool
-     */
-    public function updateQuantity($saleDocId, $line, $quantity)
-    {
-        try {
-            $affected = DB::table('MA_SaleDocDetail')
-                ->where('SaleDocId', $saleDocId)
-                ->where('Line', $line)
-                ->update(['Qty' => $quantity]);
-
-            if ($affected) {
-                Log::info("Quantità aggiornata: $saleDocId, Line: $line, Qty: $quantity");
-                return true;
-            } else {
-                Log::warning("Nessuna riga aggiornata: $saleDocId, Line: $line");
-                return false;
-            }
-        } catch (\Exception $e) {
-            Log::error("Errore nell'aggiornamento della quantità: {$e->getMessage()}");
-            return false;
-        }
-    }
-
-    /**
      * Conferma un documento
      *
      * @param string $saleDocId

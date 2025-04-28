@@ -13,55 +13,62 @@
         <button @click="loadDocumentWithDetails" class="retry-button">Riprova</button>
       </div>
 
-      <!-- Contenuto principale (mostra solo se document e details esistono) -->
-      <template v-else-if="document && details && details.length > 0">
-        <div class="logo-header">
-          <img src="/img/logo.png" alt="B&C Prodotti Chimici" />
-        </div>
+      <template v-else-if="document">
+      <!-- Intestazione rimane uguale -->
+      <div class="logo-header">
+        <img src="/img/logo.png" alt="B&C Prodotti Chimici" />
+      </div>
 
-        <div class="client-info">
-          <div class="info-label">CLIENTE:</div>
-          <div class="info-value">{{ customerName }}</div>
-        </div>
+      <div class="client-info">
+        <div class="info-label">CLIENTE:</div>
+        <div class="info-value">{{ customerName }}</div>
+      </div>
 
-        <div class="document-info">
-          <div class="info-row">
-            <div class="info-col">
-              <div class="info-label">DDT NR.</div>
-              <div class="info-value">{{ docNumber }}</div>
-            </div>
-            <div class="info-col">
-              <div class="info-label">DATA</div>
-              <div class="info-value">{{ formattedDate }}</div>
-            </div>
+      <div class="document-info">
+        <div class="info-row">
+          <div class="info-col">
+            <div class="info-label">DDT NR.</div>
+            <div class="info-value">{{ docNumber }}</div>
+          </div>
+          <div class="info-col">
+            <div class="info-label">DATA</div>
+            <div class="info-value">{{ formattedDate }}</div>
           </div>
         </div>
+      </div>
 
         <div class="summary-title">
           RIEPILOGO
         </div>
 
         <div class="summary-list">
-          <ul>
-            <li v-for="(detail, index) in details" :key="index">
-              <div class="detail-item">
-                <div class="detail-info">
-                  <div class="detail-code">{{ detail.Item }}</div>
-                  <div class="detail-description">{{ detail.Description }}</div>
-                </div>
-                <div class="detail-quantity">
-                  {{ formatQuantity(detail.Qty) }} {{ detail.UoM || '' }}
-                </div>
+        <div v-if="loadingRows" class="loading-text">Caricamento righe...</div>
+        <div v-else-if="rows.length === 0" class="empty-message">Nessuna riga registrata</div>
+        <ul v-else>
+          <li v-for="(row, index) in rows" :key="index">
+            <div class="detail-item">
+              <div class="detail-info">
+                <div class="detail-code">{{ row.Item }}</div>
+                <div class="detail-description">{{ getItemDescription(row) }}</div>
               </div>
-            </li>
-          </ul>
-        </div>
+              <div class="detail-quantity">
+                {{ formatQuantity(row.Qty) }} {{ row.UoM || '' }}
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
 
-        <div class="action-button">
-          <button @click="confirmDocument" class="btn-confirm" :disabled="confirmLoading">
-            {{ confirmLoading ? 'CONFERMA IN CORSO...' : 'CONFERMA' }}
-          </button>
-        </div>
+      <div class="action-buttons">
+        <!-- Pulsante Annulla -->
+        <button @click="cancelAndReturn" class="btn-cancel">
+          ANNULLA
+        </button>
+        <!-- Pulsante Conferma -->
+        <button @click="confirmDocument" class="btn-confirm" :disabled="confirmLoading">
+          {{ confirmLoading ? 'CONFERMA IN CORSO...' : 'CONFERMA' }}
+        </button>
+    </div>
       </template>
 
       <!-- Fallback se non ci sono dati -->
@@ -80,7 +87,10 @@
       return {
         saleDocId: null,
         confirmLoading: false,
-        localLoading: false
+        localLoading: false,
+        loadingRows: false,
+        rows: [],
+        error: null
       };
     },
 
@@ -139,8 +149,8 @@
     },
 
     methods: {
-        ...mapActions('ddt', ['fetchDocumentSummary']),
         ...mapActions('ddt', {
+            fetchDocumentSummaryAction: 'fetchDocumentSummary',
             confirmDocumentAction: 'confirmDocument'
         }),
 
@@ -151,6 +161,7 @@
 
         if (this.saleDocId) {
           this.loadDocumentWithDetails();
+          this.loadRegisteredRows();
         } else {
           console.error("SaleDocId mancante");
         }
@@ -185,30 +196,86 @@
           this.localLoading = false;
         }
       },
+      async loadRegisteredRows() {
+      this.loadingRows = true;
 
-      async confirmDocument() {
-        console.log("Conferma documento:", this.saleDocId);
+      try {
+        // Carica le righe registrate nella tabella DEB_BA4_RigheAutisti
+        const response = await axios.get(`/documents/${this.saleDocId}/registered-rows`);
 
-        this.confirmLoading = true;
-        try {
-          const response = await this.confirmDocumentAction({
-            saleDocId: this.saleDocId
-          });
-
-          console.log("Risposta conferma:", response);
-
-          if (response.success) {
-            // Mostra il messaggio di successo
-            this.$router.push({ name: 'confirmation-success' });
-          } else {
-            console.error("Errore conferma:", response);
-          }
-        } catch (err) {
-          console.error("Eccezione nella conferma del documento:", err);
-        } finally {
-          this.confirmLoading = false;
+        if (response.data.success) {
+          console.log("Righe registrate:", response.data.rows);
+          this.rows = response.data.rows;
+        } else {
+          console.error("Errore nel caricamento delle righe:", response.data.message);
+          this.error = "Errore nel caricamento delle righe";
         }
-      },
+      } catch (err) {
+        console.error("Eccezione nel caricamento delle righe:", err);
+        this.error = "Errore nella comunicazione con il server";
+      } finally {
+        this.loadingRows = false;
+      }
+    },
+
+    getItemDescription(row) {
+      // Se è una riga di dettaglio (Line > 0), usa la descrizione dalla tabella MA_SaleDocDetail
+      if (row.Line > 0) {
+        // Cerca nel dettaglio del documento
+        const detail = this.details.find(d => d.Line === row.Line);
+        return detail ? detail.Description : row.Item;
+      }
+
+      // Se è un imballo (Line = 0), cerca la descrizione nei packages
+      return row.Description || row.Item;
+    },
+
+    async confirmDocument() {
+    console.log("Conferma documento:", this.saleDocId);
+
+    this.confirmLoading = true;
+
+    try {
+        const response = await this.confirmDocumentAction({
+        saleDocId: this.saleDocId
+        });
+
+        console.log("Risposta conferma:", response);
+
+        if (response.success) {
+        // Mostra il messaggio di successo
+        this.$router.push({ name: 'confirmation-success' });
+        } else {
+        console.error("Errore conferma:", response);
+        this.error = response.message || "Errore durante la conferma";
+        }
+    } catch (err) {
+        console.error("Eccezione nella conferma del documento:", err);
+        this.error = "Si è verificato un errore durante la conferma";
+    } finally {
+        this.confirmLoading = false;
+    }
+    },
+
+    async cancelAndReturn() {
+    console.log("Cancellazione righe e ritorno alla scansione");
+
+    this.localLoading = true;
+
+    try {
+        // Cancella tutte le righe registrate per questo documento
+        const response = await axios.delete(`/documents/${this.saleDocId}/registered-rows`);
+
+        console.log("Risposta cancellazione:", response.data);
+
+        // Torna alla pagina di scansione QR code
+        this.$router.push({ name: 'scan-qr' });
+    } catch (err) {
+        console.error("Errore nella cancellazione delle righe:", err);
+        this.error = "Errore nella cancellazione delle righe";
+        this.localLoading = false;
+    }
+    },
 
       formatQuantity(qty) {
         if (qty === null || qty === undefined) return '0';
@@ -426,4 +493,32 @@
     background-color: #a0c5e8;
     cursor: not-allowed;
   }
+
+  .action-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.btn-cancel {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-cancel:hover {
+  background-color: #c82333;
+}
+
+.loading-text, .empty-message {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
   </style>

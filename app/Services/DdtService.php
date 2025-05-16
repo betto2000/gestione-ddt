@@ -33,6 +33,7 @@ class DdtService
             // Ottieni i dettagli del documento
             $details = DB::table('MA_SaleDocDetail')
                 ->where('SaleDocId', $saleDocId)
+                ->where('LineType',3538947)
                 ->orderBy('Line', 'asc')
                 ->get();
 
@@ -73,7 +74,8 @@ class DdtService
         try {
             // Query base per i dettagli
             $query = DB::table('MA_SaleDocDetail')
-                ->where('SaleDocId', $saleDocId);
+                ->where('SaleDocId', $saleDocId)
+                ->where('LineType',3538947);
 
             // Se la linea è specificata, filtra per quella linea
             if ($line !== null) {
@@ -147,6 +149,7 @@ class DdtService
         try {
             $nextDetail = DB::table('MA_SaleDocDetail')
                 ->where('SaleDocId', $saleDocId)
+                ->where('LineType',3538947)
                 ->where('Line', '>', $currentLine)
                 ->orderBy('Line', 'asc')
                 ->first();

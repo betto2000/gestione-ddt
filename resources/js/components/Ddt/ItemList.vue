@@ -266,23 +266,21 @@ export default {
     try {
         // Salva gli imballi al database
         console.log("Salvataggio imballi:", this.addedPackages);
+        if(this.addedPackages && this.addedPackages.length > 0)
+        {
+            const response = await axios.post(`/documents/${this.saleDocId}/packages`, {
+            packages: this.addedPackages
+            });
 
-        const response = await axios.post(`/documents/${this.saleDocId}/packages`, {
-        packages: this.addedPackages
-        });
-
-        if (response.data.success) {
-        console.log("Imballi salvati con successo");
-
+            if (response.data.success) {
+            console.log("Imballi salvati con successo");
+            }
+        }
         // Navigazione al riepilogo
         this.$router.push({
             name: 'document-summary',
             params: { saleDocId: this.saleDocId }
         });
-        } else {
-        console.error("Errore nel salvataggio degli imballi:", response.data.message);
-        this.error = response.data.message || "Errore nel salvataggio degli imballi";
-        }
     } catch (err) {
         console.error("Eccezione nel salvataggio degli imballi:", err);
         this.error = "Errore nella comunicazione con il server";

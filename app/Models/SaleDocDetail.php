@@ -12,7 +12,7 @@ class SaleDocDetail extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'SaleDocId', 'Line', 'Item', 'Description', 'UoM', 'Qty'
+        'SaleDocId', 'Line', 'Item', 'Description', 'UoM', 'Qty','LineType'
     ];
 
     public function saleDoc()

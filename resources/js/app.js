@@ -1,4 +1,5 @@
 import './bootstrap';
+import './register-service-worker';
 import Vue from 'vue';
 import App from './components/App.vue';
 import router from './router';

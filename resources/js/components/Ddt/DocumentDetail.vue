@@ -60,7 +60,6 @@
             v-model.number="quantity"
             class="form-control"
             step="0.1"
-            min="0"
           />
         </div>
       </div>

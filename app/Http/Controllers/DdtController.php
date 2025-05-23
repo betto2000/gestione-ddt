@@ -66,7 +66,7 @@ class DdtController extends Controller
         $validated = $request->validate([
             'sale_doc_id' => 'required',
             'line' => 'required|integer',
-            'quantity' => 'required|numeric|min:0',
+            'quantity' => 'required|numeric',
             'item' => 'required|string',  // Aggiungiamo l'item dalla riga di dettaglio
         ]);
 

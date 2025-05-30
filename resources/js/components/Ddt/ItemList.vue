@@ -45,20 +45,11 @@
       <!-- Select dinamica per il tipo di imballo -->
       <div class="select-container">
         <select v-model="selectedPackageType" class="form-control" :disabled="loadingPackages">
-          <option value="" disabled selected>{{ loadingPackages ? 'Caricamento...' : 'Seleziona tipo' }}</option>
           <option v-for="pkg in packages" :key="pkg.Item" :value="pkg.Item">
             {{ pkg.Description }}
           </option>
         </select>
       </div>
-
-        <!-- Lista degli imballi selezionati -->
-        <div class="selected-package" v-if="selectedPackageType">
-            <div class="package-item">
-                <div class="package-name">{{ getPackageName(selectedPackageType) }}</div>
-                <div class="package-check" v-if="packageSelected">✓</div>
-            </div>
-        </div>
 
         <!-- Sezione quantità -->
         <div class="quantity-section">
@@ -113,7 +104,7 @@ import { mapState, mapGetters, mapActions } from 'vuex';
 export default {
   data() {
     return {
-      selectedPackageType: '',
+      selectedPackageType: 'NESSUNO',
       packageQuantity: 0,
       packages: [],
       addedPackages: [],
@@ -121,7 +112,7 @@ export default {
       saleDocId: null,
       localLoading: false,
       error: null,
-      packageSelected: false
+      packageSelected: true
     };
   },
 
@@ -158,7 +149,7 @@ export default {
     },
 
     canAddPackage() {
-      return this.selectedPackageType && this.packageQuantity > 0;
+      return this.selectedPackageType;
     },
   },
 
@@ -248,9 +239,9 @@ export default {
             });
 
             // Reset dei campi
-            this.selectedPackageType = '';
+            this.selectedPackageType = 'NESSUNO';
             this.packageQuantity = 0;
-            this.packageSelected = false;
+            this.packageSelected = true;
         }
     },
 

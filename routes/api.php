@@ -31,6 +31,5 @@ Route::prefix('api')->group(function () {
         Route::get('/document-types', [ApiController::class, 'getDocumentTypes']);
         Route::get('/customers', [ApiController::class, 'getCustomers']);
         Route::get('/packages', [ApiController::class, 'getPackages']);
-        Route::post('/logout', [AuthController::class, 'logout']);
     });
 });

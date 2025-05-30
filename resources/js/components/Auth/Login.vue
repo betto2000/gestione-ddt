@@ -20,18 +20,30 @@
             v-model="form.email"
             class="form-control"
             required
+            :disabled="loading"
           />
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            v-model="form.password"
-            class="form-control"
-            required
-          />
+          <div class="password-container">
+            <input
+              :type="showPassword ? 'text' : 'password'"
+              id="password"
+              v-model="form.password"
+              class="form-control password-input"
+              required
+              :disabled="loading"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              @click="togglePasswordVisibility"
+              :disabled="loading"
+            >
+              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
         </div>
 
         <div class="form-group form-check">
@@ -40,6 +52,7 @@
             id="certify"
             v-model="form.certifyDevice"
             class="form-check-input"
+            :disabled="loading"
           />
           <label class="form-check-label" for="certify">
             Certifica questo dispositivo come sicuro
@@ -47,7 +60,13 @@
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
-          {{ loading ? 'Accesso in corso...' : 'Accedi' }}
+          <span v-if="loading" class="loading-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            Accesso in corso...
+          </span>
+          <span v-else>
+            Accedi
+          </span>
         </button>
       </form>
     </div>
@@ -62,27 +81,21 @@ export default {
         email: '',
         password: '',
         certifyDevice: false
-      }
+      },
+      error: null,
+      loading: false,
+      showPassword: false
     };
   },
 
   created() {
-    // Controlla se il dispositivo è già certificato
+    // Verifica se il dispositivo è già certificato
     this.checkDeviceCertification();
   },
 
   methods: {
-    generateDeviceId() {
-      // Genera un ID dispositivo univoco o recuperalo se già esiste
-      let deviceId = localStorage.getItem('device_id');
-
-      if (!deviceId) {
-        // Crea un identificatore unico
-        deviceId = 'device_' + Math.random().toString(36).substring(2, 15);
-        localStorage.setItem('device_id', deviceId);
-      }
-
-      return deviceId;
+    togglePasswordVisibility() {
+      this.showPassword = !this.showPassword;
     },
 
     async checkDeviceCertification() {
@@ -94,7 +107,6 @@ export default {
       }
 
       try {
-        // Controlla se il dispositivo è già certificato
         const response = await axios.get('/check-device', {
           headers: {
             'Device-ID': deviceId,
@@ -115,11 +127,14 @@ export default {
           this.$router.push('/scan');
         }
       } catch (error) {
-        console.error('Errore nel controllo del dispositivo:', error);
+        console.error('Errore verifica dispositivo:', error);
       }
     },
 
     async login() {
+      this.loading = true;
+      this.error = null;
+
       try {
         const deviceId = this.generateDeviceId();
 
@@ -131,7 +146,7 @@ export default {
         });
 
         if (response.data.token) {
-          // Salva i dati nel localStorage
+          // Salva i dati del dispositivo
           localStorage.setItem('device_id', deviceId);
           localStorage.setItem('device_token', response.data.token);
 
@@ -149,7 +164,19 @@ export default {
       } catch (error) {
         console.error('Errore login:', error);
         this.error = 'Credenziali non valide';
+      } finally {
+        this.loading = false;
       }
+    },
+
+    generateDeviceId() {
+      let deviceId = localStorage.getItem('device_id');
+
+      if (!deviceId) {
+        deviceId = 'device_' + Math.random().toString(36).substring(2, 15);
+      }
+
+      return deviceId;
     }
   }
 };
@@ -194,31 +221,161 @@ h2 {
   margin-bottom: 20px;
 }
 
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.form-control:disabled {
+  background-color: #f8f9fa;
+  opacity: 0.65;
+}
+
+/* Styling per il container della password */
+.password-container {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 45px; /* Spazio per il pulsante dell'occhio */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 45px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: #3490dc;
+}
+
+.password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .form-check {
+  display: flex;
+  align-items: center;
   margin-top: 20px;
+}
+
+.form-check-input {
+  margin-right: 8px;
+}
+
+.form-check-label {
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 .btn-primary {
   background-color: #3490dc;
   color: white;
-  border: none;
-  padding: 12px;
-  font-size: 16px;
-  transition: background-color 0.3s;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: #2779bd;
 }
 
-.btn-block {
-  display: block;
-  width: 100%;
+.btn-primary:disabled {
+  background-color: #a0c5e8;
+  cursor: not-allowed;
 }
 
+/* Styling per il contenuto di caricamento */
+.loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-content i {
+  font-size: 14px;
+}
+
+/* Animazione di rotazione per l'icona di caricamento */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Alert styling */
+.alert {
+  padding: 12px 16px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+/* Responsive adjustments */
 @media (max-width: 576px) {
   .login-card {
     padding: 20px;
+  }
+
+  .form-control {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .password-input {
+    padding-right: 40px;
+  }
+
+  .password-toggle {
+    width: 40px;
   }
 }
 </style>

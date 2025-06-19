@@ -41,23 +41,49 @@
           RIEPILOGO
         </div>
 
-        <div class="summary-list">
-        <div v-if="loadingRows" class="loading-text">Caricamento righe...</div>
-        <div v-else-if="rows.length === 0" class="empty-message">Nessuna riga registrata</div>
-        <ul v-else>
-          <li v-for="(row, index) in rows" :key="index">
-            <div class="detail-item">
-              <div class="detail-info">
-                <div class="detail-code">{{ row.Item }}</div>
-                <div class="detail-description">{{ getItemDescription(row) }}</div>
-              </div>
-              <div class="detail-quantity">
-                {{ formatQuantity(row.Qty) }} {{ row.UoM || '' }}
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
+        <!-- Sezione Consegnato -->
+        <div class="summary-section">
+          <div class="section-title consegnato">CONSEGNATO</div>
+          <div class="summary-list">
+            <div v-if="loadingRows" class="loading-text">Caricamento righe...</div>
+            <div v-else-if="deliveredRows.length === 0" class="empty-message">Nessun prodotto consegnato</div>
+            <ul v-else>
+              <li v-for="(row, index) in deliveredRows" :key="'delivered-' + index">
+                <div class="detail-item">
+                  <div class="detail-info">
+                    <div class="detail-code">{{ row.Item }}</div>
+                    <div class="detail-description">{{ getItemDescription(row) }}</div>
+                  </div>
+                  <div class="detail-quantity">
+                    {{ formatQuantity(row.Qty) }} {{ row.UoM || '' }}
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Sezione Reso -->
+        <div class="summary-section">
+          <div class="section-title reso">RESO</div>
+          <div class="summary-list">
+            <div v-if="loadingRows" class="loading-text">Caricamento righe...</div>
+            <div v-else-if="returnedRows.length === 0" class="empty-message">Nessun imballo reso</div>
+            <ul v-else>
+              <li v-for="(row, index) in returnedRows" :key="'returned-' + index">
+                <div class="detail-item">
+                  <div class="detail-info">
+                    <div class="detail-code">{{ row.Item }}</div>
+                    <div class="detail-description">{{ getItemDescription(row) }}</div>
+                  </div>
+                  <div class="detail-quantity">
+                    {{ formatQuantity(row.Qty) }} {{ row.UoM || '' }}
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
       <div class="action-buttons">
         <!-- Pulsante Annulla -->
@@ -128,6 +154,16 @@
           console.error("Errore nella formattazione della data:", e);
           return this.document.DocumentDate || '';
         }
+      },
+
+      // Righe consegnate (Line > 0)
+      deliveredRows() {
+        return this.rows.filter(row => row.Line > 0);
+      },
+
+      // Righe rese/imballi (Line = 0)
+      returnedRows() {
+        return this.rows.filter(row => row.Line == 0);
       }
     },
 
@@ -419,10 +455,34 @@
     text-align: center;
   }
 
+  .summary-section {
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .section-title.consegnato {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .section-title.reso {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  }
+
   .summary-list {
     background-color: #f5f5f5;
     padding: 15px;
-    margin-bottom: 30px;
     border-radius: 4px;
   }
 

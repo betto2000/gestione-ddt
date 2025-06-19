@@ -1,5 +1,3 @@
-// resources/js/components/Ddt/ItemsList.vue
-
 <template>
   <div class="items-list">
     <!-- Mostra loader durante il caricamento -->
@@ -59,7 +57,13 @@
 
           <div class="quantity-input-group">
             <button @click="decreaseQty" class="qty-btn">-</button>
-            <div class="qty-input">{{ packageQuantity }}</div>
+            <input
+              v-model.number="packageQuantity"
+              type="number"
+              min="0"
+              class="qty-input"
+              @focus="$event.target.select()"
+            />
             <button @click="increaseQty" class="qty-btn">+</button>
           </div>
         </div>
@@ -494,6 +498,20 @@ export default {
   text-align: center;
   padding: 10px;
   font-size: 20px;
+  border: none;
+  outline: none;
+  background: white;
+}
+
+.qty-input:focus {
+  background-color: #f8f9fa;
+}
+
+/* Nascondere i controlli di incremento/decremento del browser per input number */
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .packages-list {
